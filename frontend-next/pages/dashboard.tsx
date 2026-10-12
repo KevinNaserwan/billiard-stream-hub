@@ -11,19 +11,46 @@ interface TableItem {
   activeSession: any;
 }
 
+interface OrderItem {
+  id: string;
+  tableId: number;
+  tableName: string;
+  items: { name: string; price: number; qty: number }[];
+  notes?: string;
+  status: string;
+}
+
+interface ToastNotification {
+  id: string;
+  title: string;
+  message: string;
+  type: 'order' | 'success' | 'error';
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const [tables, setTables] = useState<TableItem[]>([]);
-  const [orders, setOrders] = useState<any[]>([]);
+  const [orders, setOrders] = useState<OrderItem[]>([]);
   const [user, setUser] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'cameras'>('overview');
   
+  // Custom Toast notifications (No default browser alert!)
+  const [toasts, setToasts] = useState<ToastNotification[]>([]);
+
   // Modal states
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedTableId, setSelectedTableId] = useState(1);
   const [duration, setDuration] = useState(60);
   const [customerName, setCustomerName] = useState('');
-  const [qrModalData, setQrModalData] = useState<{ tableName: string; qrUrl: string } | null>(null);
+  const [qrModalData, setQrModalData] = useState<{ tableName: string; qrUrl: string; duration: number } | null>(null);
+
+  const addToast = (title: string, message: string, type: 'order' | 'success' | 'error' = 'success') => {
+    const id = `toast_${Date.now()}`;
+    setToasts(prev => [...prev, { id, title, message, type }]);
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, 4500);
+  };
 
   useEffect(() => {
     const token = localStorage.getItem('billiard_auth_token');
@@ -35,7 +62,29 @@ export default function DashboardPage() {
     if (savedUser) setUser(JSON.parse(savedUser));
     fetchTables(token);
     fetchOrders(token);
+    setupRealtimeOrders();
   }, []);
+
+  const setupRealtimeOrders = () => {
+    try {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      // Hubungkan ke port backend 3055
+      const ws = new WebSocket(`${protocol}//${window.location.hostname}:3055?role=cashier`);
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === 'NEW_ORDER') {
+            addToast(
+              `🔔 Pesanan Masuk: ${data.order.tableName}`,
+              data.order.items.map((i: any) => `${i.name} (x${i.qty})`).join(', '),
+              'order'
+            );
+            fetchOrders();
+          }
+        } catch (e) {}
+      };
+    } catch (e) {}
+  };
 
   const authFetch = (url: string, options: any = {}) => {
     const token = localStorage.getItem('billiard_auth_token');
@@ -75,12 +124,51 @@ export default function DashboardPage() {
       const data = await res.json();
       if (data.status === 'success') {
         setIsCreateOpen(false);
-        setQrModalData({ tableName: data.session.tableName, qrUrl: data.qrDataUrl });
+        setQrModalData({ tableName: data.session.tableName, qrUrl: data.qrDataUrl, duration });
+        addToast('Sesi Berhasil Dibuat', `Akses meja ${data.session.tableName} aktif selama ${duration} menit.`);
+        fetchTables();
+      } else {
+        addToast('Gagal Membuka Sesi', data.error || 'Server error', 'error');
+      }
+    } catch (e: any) {
+      addToast('Kesalahan Jaringan', e.message, 'error');
+    }
+  };
+
+  const handleExtend = async (sessionId: string) => {
+    try {
+      const res = await authFetch(`/api/sessions/${sessionId}/extend`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ additionalMinutes: 30 })
+      });
+      if (res.ok) {
+        addToast('Durasi Ditambahkan', 'Waktu bermain ditambah 30 menit.');
         fetchTables();
       }
-    } catch (e) {
-      alert('Gagal membuka sesi');
-    }
+    } catch (e) {}
+  };
+
+  const handleTerminate = async (sessionId: string) => {
+    try {
+      const res = await authFetch(`/api/sessions/${sessionId}/terminate`, { method: 'POST' });
+      if (res.ok) {
+        addToast('Sesi Dihentikan', 'Live streaming meja telah dinonaktifkan.');
+        fetchTables();
+      }
+    } catch (e) {}
+  };
+
+  const handleMarkOrderComplete = async (orderId: string) => {
+    try {
+      await authFetch(`/api/cashier/orders/${orderId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'completed' })
+      });
+      addToast('Pesanan Selesai', 'Status pesanan diperbarui.');
+      fetchOrders();
+    } catch (e) {}
   };
 
   const handleLogout = () => {
@@ -92,10 +180,40 @@ export default function DashboardPage() {
   const activeTablesCount = tables.filter(t => t.status === 'active').length;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex antialiased">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex antialiased selection:bg-emerald-500 selection:text-black">
       <Head>
         <title>Dashboard - BilliardStream Hub Enterprise</title>
       </Head>
+
+      {/* ================= TOAST NOTIFICATION CONTAINER ================= */}
+      <div className="fixed top-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none max-w-sm w-full">
+        {toasts.map(toast => (
+          <div
+            key={toast.id}
+            className={`pointer-events-auto flex items-start space-x-3 p-4 rounded-2xl shadow-2xl border backdrop-blur-md transition-all duration-300 transform translate-y-0 ${
+              toast.type === 'order'
+                ? 'bg-amber-950/90 border-amber-500/40 text-amber-200'
+                : toast.type === 'error'
+                ? 'bg-rose-950/90 border-rose-500/40 text-rose-200'
+                : 'bg-slate-900/90 border-emerald-500/40 text-emerald-200'
+            }`}
+          >
+            <div className="text-lg shrink-0">
+              {toast.type === 'order' ? '🍔' : toast.type === 'error' ? '⚠️' : '✅'}
+            </div>
+            <div className="flex-1 text-xs">
+              <div className="font-bold text-white text-[13px]">{toast.title}</div>
+              <div className="text-slate-300 mt-0.5 leading-snug">{toast.message}</div>
+            </div>
+            <button
+              onClick={() => setToasts(prev => prev.filter(t => t.id !== toast.id))}
+              className="text-slate-400 hover:text-white text-xs shrink-0 p-1"
+            >
+              &times;
+            </button>
+          </div>
+        ))}
+      </div>
 
       {/* Modern Sidebar */}
       <aside className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col justify-between shrink-0">
@@ -115,7 +233,7 @@ export default function DashboardPage() {
               onClick={() => setActiveTab('overview')}
               className={`w-full text-left flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
                 activeTab === 'overview'
-                  ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                  ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-sm'
                   : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
               }`}
             >
@@ -126,7 +244,7 @@ export default function DashboardPage() {
               onClick={() => setActiveTab('orders')}
               className={`w-full text-left flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
                 activeTab === 'orders'
-                  ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                  ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-sm'
                   : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
               }`}
             >
@@ -142,7 +260,7 @@ export default function DashboardPage() {
               onClick={() => setActiveTab('cameras')}
               className={`w-full text-left flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
                 activeTab === 'cameras'
-                  ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                  ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-sm'
                   : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
               }`}
             >
@@ -155,10 +273,10 @@ export default function DashboardPage() {
         <div className="p-4 border-t border-slate-800">
           <div className="flex items-center justify-between bg-slate-950 p-3 rounded-2xl border border-slate-800">
             <div>
-              <div className="text-xs font-bold text-white truncate">{user?.fullName || 'Kasir'}</div>
+              <div className="text-xs font-bold text-white truncate">{user?.fullName || 'Kasir Frontdesk'}</div>
               <div className="text-[10px] text-slate-400 capitalize">{user?.role || 'Operator'}</div>
             </div>
-            <button onClick={handleLogout} className="text-slate-400 hover:text-rose-400 text-xs font-semibold p-1">
+            <button onClick={handleLogout} className="text-slate-400 hover:text-rose-400 text-xs font-semibold p-1 transition-colors">
               Keluar
             </button>
           </div>
@@ -167,9 +285,9 @@ export default function DashboardPage() {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        <header className="h-16 border-b border-slate-800 bg-slate-900/60 backdrop-blur px-6 flex items-center justify-between">
+        <header className="h-16 border-b border-slate-800 bg-slate-900/60 backdrop-blur px-6 flex items-center justify-between sticky top-0 z-30">
           <h2 className="text-sm font-bold text-white capitalize">Monitoring Arena Meja Live</h2>
-          <button onClick={() => fetchTables()} className="text-xs bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-xl text-slate-300">
+          <button onClick={() => fetchTables()} className="text-xs bg-slate-800 hover:bg-slate-700 px-3.5 py-1.5 rounded-xl text-slate-300 font-medium transition-colors">
             Refresh Data
           </button>
         </header>
@@ -178,7 +296,7 @@ export default function DashboardPage() {
           {activeTab === 'overview' && (
             <>
               {/* Quick Opener Banner */}
-              <div className="bg-gradient-to-r from-slate-900 to-slate-900/80 border border-slate-800 rounded-3xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="bg-gradient-to-r from-slate-900 to-slate-900/80 border border-slate-800 rounded-3xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl">
                 <div>
                   <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-400">Quick Dispatcher</span>
                   <h3 className="text-lg font-bold text-white mt-0.5">Buka Sesi Meja & Tampilkan QR Code</h3>
@@ -186,7 +304,7 @@ export default function DashboardPage() {
                 </div>
                 <button
                   onClick={() => setIsCreateOpen(true)}
-                  className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-5 py-2.5 rounded-2xl text-xs shadow-lg shadow-emerald-500/20"
+                  className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-5 py-2.5 rounded-2xl text-xs shadow-lg shadow-emerald-500/20 transition-all shrink-0"
                 >
                   + Buka Meja Baru
                 </button>
@@ -217,13 +335,13 @@ export default function DashboardPage() {
                       key={table.id}
                       className={`bg-slate-900 border ${
                         isActive ? 'border-emerald-500/40 bg-gradient-to-b from-slate-900 to-emerald-950/20' : 'border-slate-800'
-                      } rounded-2xl p-5 flex flex-col justify-between`}
+                      } rounded-2xl p-5 flex flex-col justify-between shadow-lg`}
                     >
                       <div>
                         <div className="flex items-center justify-between mb-3">
                           <h4 className="text-sm font-bold text-white">{table.name}</h4>
                           <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                            isActive ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-400'
+                            isActive ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-slate-800 text-slate-400'
                           }`}>
                             {isActive ? 'SEDANG MAIN' : 'TERSEDIA'}
                           </span>
@@ -242,10 +360,25 @@ export default function DashboardPage() {
                         )}
                       </div>
 
-                      {!isActive && (
+                      {isActive ? (
+                        <div className="grid grid-cols-2 gap-2 mt-2">
+                          <button
+                            onClick={() => handleExtend(table.activeSession?.sessionId)}
+                            className="bg-slate-800 hover:bg-slate-700 text-[11px] font-semibold py-2 rounded-xl text-slate-200 transition-colors"
+                          >
+                            +30 Menit
+                          </button>
+                          <button
+                            onClick={() => handleTerminate(table.activeSession?.sessionId)}
+                            className="bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 text-[11px] font-semibold py-2 rounded-xl border border-rose-500/20 transition-colors"
+                          >
+                            Stop Sesi
+                          </button>
+                        </div>
+                      ) : (
                         <button
                           onClick={() => { setSelectedTableId(table.id); setIsCreateOpen(true); }}
-                          className="w-full bg-slate-800/80 hover:bg-slate-800 text-emerald-400 text-xs font-semibold py-2 rounded-xl"
+                          className="w-full bg-slate-800/80 hover:bg-slate-800 text-emerald-400 text-xs font-semibold py-2.5 rounded-xl transition-colors mt-2"
                         >
                           Buka Meja Ini
                         </button>
@@ -265,14 +398,25 @@ export default function DashboardPage() {
                   Belum ada pesanan F&B baru dari meja pelanggan.
                 </p>
               ) : (
-                orders.map((o: any) => (
-                  <div key={o.id} className="bg-slate-900 p-4 rounded-2xl border border-slate-800 flex justify-between items-center text-xs">
+                orders.map(o => (
+                  <div key={o.id} className="bg-slate-900 p-4 rounded-2xl border border-slate-800 flex justify-between items-center text-xs shadow-md">
                     <div>
                       <span className="font-bold text-amber-400">[{o.tableName}]</span>
-                      <div className="text-white mt-1 font-medium">{o.items.map((i: any) => `${i.name} (x${i.qty})`).join(', ')}</div>
+                      <div className="text-white mt-1 font-medium">{o.items.map(i => `${i.name} (x${i.qty})`).join(', ')}</div>
                       {o.notes && <div className="text-[11px] text-slate-500 italic mt-0.5">Catatan: "{o.notes}"</div>}
                     </div>
-                    <span className="px-2.5 py-1 rounded bg-amber-500/20 text-amber-300 text-[10px] font-bold uppercase">{o.status}</span>
+                    <div className="flex items-center space-x-2">
+                      {o.status === 'pending' ? (
+                        <button
+                          onClick={() => handleMarkOrderComplete(o.id)}
+                          className="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-xl font-bold transition-colors"
+                        >
+                          Tandai Selesai
+                        </button>
+                      ) : (
+                        <span className="px-2.5 py-1 rounded bg-slate-800 text-slate-400 text-[10px] font-bold uppercase">{o.status}</span>
+                      )}
+                    </div>
                   </div>
                 ))
               )}
@@ -280,7 +424,7 @@ export default function DashboardPage() {
           )}
 
           {activeTab === 'cameras' && (
-            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4">
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl">
               <h3 className="text-sm font-bold text-white">Topologi IP Camera & WebRTC WHEP</h3>
               <div className="space-y-3">
                 {tables.map(t => (
@@ -289,7 +433,7 @@ export default function DashboardPage() {
                       <div className="font-bold text-white">{t.name}</div>
                       <div className="text-[10px] text-slate-500 font-mono">{t.rtspUrl}</div>
                     </div>
-                    <span className="text-emerald-400 font-mono text-[10px]">WHEP ACTIVE</span>
+                    <span className="text-emerald-400 font-mono text-[10px] bg-emerald-500/10 px-2.5 py-1 rounded-lg">WHEP ACTIVE</span>
                   </div>
                 ))}
               </div>
@@ -298,21 +442,21 @@ export default function DashboardPage() {
         </main>
       </div>
 
-      {/* Modal Buka Sesi */}
+      {/* ================= MODAL: BUKA SESI MEJA ================= */}
       {isCreateOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-md w-full space-y-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-md w-full space-y-4 shadow-2xl">
             <div className="flex justify-between items-center border-b border-slate-800 pb-3">
               <h3 className="text-sm font-bold text-white">Buka Sesi Meja Baru</h3>
-              <button onClick={() => setIsCreateOpen(false)} className="text-slate-400 hover:text-white">&times;</button>
+              <button onClick={() => setIsCreateOpen(false)} className="text-slate-400 hover:text-white text-lg">&times;</button>
             </div>
-            <form onSubmit={handleCreateSession} className="space-y-3">
+            <form onSubmit={handleCreateSession} className="space-y-3.5">
               <div>
                 <label className="block text-xs font-semibold text-slate-400 mb-1">Pilih Meja</label>
                 <select
                   value={selectedTableId}
                   onChange={(e) => setSelectedTableId(Number(e.target.value))}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
                 >
                   {tables.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                 </select>
@@ -322,24 +466,25 @@ export default function DashboardPage() {
                 <select
                   value={duration}
                   onChange={(e) => setDuration(Number(e.target.value))}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
                 >
                   <option value={30}>30 Menit</option>
                   <option value={60}>60 Menit (1 Jam)</option>
                   <option value={120}>120 Menit (2 Jam)</option>
+                  <option value={180}>180 Menit (3 Jam)</option>
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1">Nama Pelanggan</label>
+                <label className="block text-xs font-semibold text-slate-400 mb-1">Nama / Panggilan Pelanggan</label>
                 <input
                   type="text"
                   placeholder="Contoh: Mas Kevin"
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
                 />
               </div>
-              <button type="submit" className="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold py-2.5 rounded-xl text-xs mt-2">
+              <button type="submit" className="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold py-3 rounded-xl text-xs mt-2 shadow-lg shadow-emerald-500/20 transition-all">
                 Generate & Tampilkan QR
               </button>
             </form>
@@ -347,20 +492,22 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Modal Popup QR */}
+      {/* ================= MODAL: POPUP QR CODE ================= */}
       {qrModalData && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-sm w-full text-center space-y-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-sm w-full text-center space-y-4 shadow-2xl">
             <h3 className="text-base font-bold text-white">QR Code Akses {qrModalData.tableName}</h3>
-            <div className="bg-white p-4 rounded-2xl inline-block">
+            <p className="text-xs text-slate-400">Scan QR Code ini menggunakan kamera HP untuk menonton streaming overhead meja:</p>
+            <div className="bg-white p-4 rounded-2xl inline-block shadow-inner">
               <img src={qrModalData.qrUrl} alt="QR Code" className="w-56 h-56 mx-auto" />
             </div>
-            <div className="flex space-x-2">
-              <button onClick={() => window.print()} className="flex-1 bg-slate-800 text-xs py-2.5 rounded-xl font-bold">
+            <div className="text-xs font-semibold text-emerald-400">Durasi Sesi: {qrModalData.duration} Menit</div>
+            <div className="flex space-x-2 pt-2">
+              <button onClick={() => window.print()} className="flex-1 bg-slate-800 hover:bg-slate-700 text-white text-xs py-2.5 rounded-xl font-bold transition-colors">
                 Cetak Slip
               </button>
-              <button onClick={() => setQrModalData(null)} className="flex-1 bg-emerald-500 text-slate-950 text-xs py-2.5 rounded-xl font-bold">
-                Selesai
+              <button onClick={() => setQrModalData(null)} className="flex-1 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs py-2.5 rounded-xl font-bold transition-colors">
+                Selesai / Tutup
               </button>
             </div>
           </div>
