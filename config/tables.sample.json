@@ -2,37 +2,55 @@
   {
     "id": 1,
     "name": "Table 01 - Standard Arena",
+    "brand": "Hikvision (DS-2CD2143G2-I)",
     "streamPath": "table1",
-    "rtspUrl": "rtsp://admin:password123@192.168.1.101:554/Streaming/Channels/101"
+    "ipAddress": "192.168.1.101",
+    "rtspUrl": "rtsp://admin:password123@192.168.1.101:554/Streaming/Channels/101",
+    "onvifPort": 80
   },
   {
     "id": 2,
     "name": "Table 02 - Standard Arena",
+    "brand": "TP-Link VIGI (C440)",
     "streamPath": "table2",
-    "rtspUrl": "rtsp://admin:password123@192.168.1.102:554/Streaming/Channels/101"
+    "ipAddress": "192.168.1.102",
+    "rtspUrl": "rtsp://admin:password123@192.168.1.102:554/stream1",
+    "onvifPort": 2020
   },
   {
     "id": 3,
     "name": "Table 03 - VIP Diamond",
+    "brand": "Hikvision (DS-2CD2143G2-I)",
     "streamPath": "table3",
-    "rtspUrl": "rtsp://admin:password123@192.168.1.103:554/Streaming/Channels/101"
+    "ipAddress": "192.168.1.103",
+    "rtspUrl": "rtsp://admin:password123@192.168.1.103:554/Streaming/Channels/101",
+    "onvifPort": 80
   },
   {
     "id": 4,
     "name": "Table 04 - VIP Gold",
+    "brand": "TP-Link VIGI (C440)",
     "streamPath": "table4",
-    "rtspUrl": "rtsp://admin:password123@192.168.1.104:554/Streaming/Channels/101"
+    "ipAddress": "192.168.1.104",
+    "rtspUrl": "rtsp://admin:password123@192.168.1.104:554/stream1",
+    "onvifPort": 2020
   },
   {
     "id": 5,
     "name": "Table 05 - Pro Tournament",
+    "brand": "Hikvision (DS-2CD2143G2-I)",
     "streamPath": "table5",
-    "rtspUrl": "rtsp://admin:password123@192.168.1.105:554/Streaming/Channels/101"
+    "ipAddress": "192.168.1.105",
+    "rtspUrl": "rtsp://admin:password123@192.168.1.105:554/Streaming/Channels/101",
+    "onvifPort": 80
   },
   {
     "id": 6,
     "name": "Table 06 - Pro Tournament",
+    "brand": "TP-Link VIGI (C440)",
     "streamPath": "table6",
-    "rtspUrl": "rtsp://admin:password123@192.168.1.106:554/Streaming/Channels/101"
+    "ipAddress": "192.168.1.106",
+    "rtspUrl": "rtsp://admin:password123@192.168.1.106:554/stream1",
+    "onvifPort": 2020
   }
 ]

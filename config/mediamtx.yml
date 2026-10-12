@@ -1,43 +1,65 @@
-# MediaMTX Configuration for BilliardStream Hub
-# Optimized for Ultra-Low Latency WebRTC (<500ms) over Local Wi-Fi
+# MediaMTX Configuration for BilliardStream Hub (Local On-Premise Edge)
+# Optimized for Ultra-Low Latency WebRTC (<500ms) over Local Kafe Wi-Fi
+# Zero External Internet Quota Consumption
 
 logLevel: info
 logDestinations: [stdout]
 
-# RTSP listener for cameras
+# RTSP Client & Listener Configuration
 rtspDisable: false
 rtspAddress: :8554
+protocols: [tcp] # Wajib TCP untuk RTSP IP Camera agar tidak ada frame drop / packet loss di switch PoE
 
-# WebRTC (WHEP) for mobile browser player
+# WebRTC (WHEP) Engine for Mobile Browser Player (iOS Safari & Android Chrome)
 webrtcDisable: false
 webrtcAddress: :8889
 webrtcAllowOrigins: ['*']
 webrtcLocalUDPAddress: :8189
 webrtcIPsFromInterfaces: true
+webrtcAdditionalHosts: ['127.0.0.1', '192.168.1.100', 'billiard.local']
 
-# HLS fallback (disabled by default to maintain <500ms latency)
+# Matikan protokol yang tidak dibutuhkan untuk menghemat RAM Mini PC
 hlsDisable: true
-
-# RTMP listener (optional)
 rtmpDisable: true
+srtDisable: true
 
 # Predefined paths per billiard table
+# Mendukung URL RTSP Resmi Hikvision (ISAPI) dan TP-Link VIGI (ONVIF Standard)
 paths:
+  # MEJA 1 - Contoh Format RTSP Hikvision (Main Stream 1080p)
+  # Syntax: rtsp://<username>:<password>@<IP_CAMERA>:554/Streaming/Channels/101
   table1:
     source: rtsp://admin:password123@192.168.1.101:554/Streaming/Channels/101
     sourceOnDemand: true
+    sourceProtocol: tcp
+
+  # MEJA 2 - Contoh Format RTSP TP-Link VIGI (Main Stream 1080p)
+  # Syntax: rtsp://<username>:<password>@<IP_CAMERA>:554/stream1
   table2:
-    source: rtsp://admin:password123@192.168.1.102:554/Streaming/Channels/101
+    source: rtsp://admin:password123@192.168.1.102:554/stream1
     sourceOnDemand: true
+    sourceProtocol: tcp
+
+  # MEJA 3 - Hikvision Overhead Camera
   table3:
     source: rtsp://admin:password123@192.168.1.103:554/Streaming/Channels/101
     sourceOnDemand: true
+    sourceProtocol: tcp
+
+  # MEJA 4 - TP-Link VIGI Overhead Camera
   table4:
-    source: rtsp://admin:password123@192.168.1.104:554/Streaming/Channels/101
+    source: rtsp://admin:password123@192.168.1.104:554/stream1
     sourceOnDemand: true
+    sourceProtocol: tcp
+
+  # MEJA 5 - Hikvision Overhead Camera
   table5:
     source: rtsp://admin:password123@192.168.1.105:554/Streaming/Channels/101
     sourceOnDemand: true
+    sourceProtocol: tcp
+
+  # MEJA 6 - TP-Link VIGI Overhead Camera
   table6:
-    source: rtsp://admin:password123@192.168.1.106:554/Streaming/Channels/101
+    source: rtsp://admin:password123@192.168.1.106:554/stream1
     sourceOnDemand: true
+    sourceProtocol: tcp
