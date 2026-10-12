@@ -346,7 +346,7 @@ export default function DashboardPage() {
 
             <button
               onClick={() => setActiveTab('analytics')}
-              title="Ringkasan Omset & Durasi"
+              title="Estimasi Tarif & Durasi Main"
               className={`w-full text-left flex items-center ${
                 isSidebarOpen ? 'space-x-3 px-3.5' : 'justify-center px-0'
               } py-2.5 rounded-xl text-xs font-semibold transition-all ${
@@ -356,7 +356,7 @@ export default function DashboardPage() {
               }`}
             >
               <span className="text-base shrink-0">📈</span>
-              {isSidebarOpen && <span>Omset & Durasi</span>}
+              {isSidebarOpen && <span>Estimasi & Durasi</span>}
             </button>
           </nav>
         </div>
@@ -638,24 +638,31 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {/* Nilai Plus: Ringkasan Omset & Durasi Sesi */}
+          {/* Nilai Plus: Ringkasan Estimasi Nilai Sewa Meja & Jam Bermain */}
           {activeTab === 'analytics' && (
             <div className="space-y-4">
+              <div className="bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-500/20 rounded-2xl p-4 text-xs text-slate-600 dark:text-slate-400 flex items-center space-x-3">
+                <span className="text-xl">ℹ️</span>
+                <div>
+                  <strong className="text-slate-900 dark:text-white">Catatan Transparansi Sistem Stand-Alone:</strong> Angka di bawah adalah <em>estimasi nilai transaksi operasional sewa meja</em> yang dihitung otomatis dari akumulasi durasi booking live stream (Rp 50.000/jam) dan pesanan F&B mandiri dari meja, terpisah dari pembukuan kasir POS utama.
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm">
-                  <span className="text-xs text-slate-500">Estimasi Omset Hari Ini</span>
+                  <span className="text-xs text-slate-500">Estimasi Nilai Sewa Meja Hari Ini</span>
                   <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">Rp 1.450.000</div>
-                  <span className="text-[10px] text-slate-400">Total 18 Jam Main</span>
+                  <span className="text-[10px] text-slate-400">Akumulasi 18 Jam Sesi Aktif</span>
                 </div>
                 <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm">
-                  <span className="text-xs text-slate-500">Meja Paling Ramai</span>
+                  <span className="text-xs text-slate-500">Meja Paling Sering Disewa</span>
                   <div className="text-xl font-bold text-slate-900 dark:text-white mt-1">Table 03 (VIP Diamond)</div>
-                  <span className="text-[10px] text-slate-400">5 Jam Penggunaan</span>
+                  <span className="text-[10px] text-slate-400">5 Jam Sesi Live Stream</span>
                 </div>
                 <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm">
                   <span className="text-xs text-slate-500">Total Klip 30s Diunduh</span>
                   <div className="text-2xl font-black text-amber-500 mt-1">24 Video</div>
-                  <span className="text-[10px] text-slate-400">Highlight Trickshots</span>
+                  <span className="text-[10px] text-slate-400">Highlight Trickshots Pelanggan</span>
                 </div>
               </div>
             </div>
