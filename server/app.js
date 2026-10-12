@@ -2,6 +2,7 @@ const express = require('express');
 const http = require('http');
 const path = require('path');
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
 const { WebSocketServer } = require('ws');
 const QRCode = require('qrcode');
 
@@ -15,15 +16,65 @@ const wss = new WebSocketServer({ server });
 
 const PORT = process.env.PORT || 3000;
 const MEDIAMTX_WHEP_BASE = process.env.MEDIAMTX_WHEP || 'http://localhost:8889';
+const AUTH_SECRET = process.env.AUTH_SECRET || 'billiard_admin_supersecret_jwt_2026';
 
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public')));
 
-// ---------------------- CASHIER API ----------------------
+// ---------------------- AUTH MIDDLEWARE ----------------------
+function requireAuth(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Sesi login tidak sah atau tidak ditemukan' });
+  }
 
-// 1. Get List of Tables
-app.get('/api/tables', (req, res) => {
+  const token = authHeader.split(' ')[1];
+  try {
+    const decoded = jwt.verify(token, AUTH_SECRET);
+    req.user = decoded;
+    next();
+  } catch (err) {
+    return res.status(403).json({ error: 'Token login kadaluarsa atau tidak valid' });
+  }
+}
+
+// ---------------------- AUTH API ----------------------
+
+// 1. Admin/Cashier Login
+app.post('/api/auth/login', (req, res) => {
+  const { username, password } = req.body;
+  if (!username || !password) {
+    return res.status(400).json({ error: 'Username dan password wajib diisi' });
+  }
+
+  const user = db.validateUser(username, password);
+  if (!user) {
+    return res.status(401).json({ error: 'Username atau password salah' });
+  }
+
+  const token = jwt.sign(
+    { userId: user.id, username: user.username, role: user.role, fullName: user.fullName },
+    AUTH_SECRET,
+    { expiresIn: '12h' }
+  );
+
+  res.json({
+    status: 'success',
+    token,
+    user
+  });
+});
+
+// 2. Get Current Auth Profile
+app.get('/api/auth/me', requireAuth, (req, res) => {
+  res.json({ status: 'success', user: req.user });
+});
+
+// ---------------------- DASHBOARD / CASHIER API (PROTECTED) ----------------------
+
+// 1. Get Tables & Status
+app.get('/api/tables', requireAuth, (req, res) => {
   const tables = db.getTables();
   const activeSessions = db.getAllActiveSessions();
 
@@ -39,8 +90,8 @@ app.get('/api/tables', (req, res) => {
   res.json({ status: 'success', data: result });
 });
 
-// 2. Create New Table Session & Generate QR
-app.post('/api/sessions/create', async (req, res) => {
+// 2. Create Table Session & Generate QR
+app.post('/api/sessions/create', requireAuth, async (req, res) => {
   try {
     const { tableId, durationMinutes, customerName } = req.body;
     if (!tableId || !durationMinutes) {
@@ -67,7 +118,7 @@ app.post('/api/sessions/create', async (req, res) => {
 });
 
 // 3. Extend Session
-app.post('/api/sessions/:sessionId/extend', (req, res) => {
+app.post('/api/sessions/:sessionId/extend', requireAuth, (req, res) => {
   const { sessionId } = req.params;
   const { additionalMinutes } = req.body;
   const updated = sessionManager.extendSession(sessionId, Number(additionalMinutes) || 30);
@@ -76,14 +127,28 @@ app.post('/api/sessions/:sessionId/extend', (req, res) => {
 });
 
 // 4. Terminate Session
-app.post('/api/sessions/:sessionId/terminate', (req, res) => {
+app.post('/api/sessions/:sessionId/terminate', requireAuth, (req, res) => {
   const { sessionId } = req.params;
   const ok = sessionManager.terminateSession(sessionId);
   if (!ok) return res.status(404).json({ error: 'Session not found' });
   res.json({ status: 'success', message: 'Session terminated' });
 });
 
-// ---------------------- PLAYER API ----------------------
+// 5. Get F&B Orders (Cashier View)
+app.get('/api/cashier/orders', requireAuth, (req, res) => {
+  res.json({ status: 'success', orders: db.getOrders() });
+});
+
+// 6. Update F&B Order Status
+app.patch('/api/cashier/orders/:orderId/status', requireAuth, (req, res) => {
+  const { orderId } = req.params;
+  const { status } = req.body;
+  const updated = db.updateOrderStatus(orderId, status);
+  if (!updated) return res.status(404).json({ error: 'Order not found' });
+  res.json({ status: 'success', order: updated });
+});
+
+// ---------------------- PLAYER PUBLIC API (TOKEN GUARDED) ----------------------
 
 // 1. Validate Token & Get Stream Info
 app.get('/api/player/session-info', (req, res) => {
@@ -153,9 +218,9 @@ app.post('/api/player/order', (req, res) => {
   res.json({ status: 'success', order });
 });
 
-// 4. Get F&B Orders (Cashier View)
-app.get('/api/cashier/orders', (req, res) => {
-  res.json({ status: 'success', orders: db.getOrders() });
+// 4. Get Menu Catalog (Public for Player)
+app.get('/api/player/menu', (req, res) => {
+  res.json({ status: 'success', menu: db.getMenuCatalog() });
 });
 
 // ---------------------- WEBSOCKET REALTIME ----------------------
@@ -197,7 +262,5 @@ wss.on('connection', (ws, req) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`[BilliardStream Hub] Edge Server running on http://localhost:${PORT}`);
-  console.log(`- Cashier Portal: http://localhost:${PORT}/cashier.html`);
-  console.log(`- Guest Player:   http://localhost:${PORT}/player.html`);
+  console.log(`[BilliardStream Hub] Secure Edge Server running on port ${PORT}`);
 });
