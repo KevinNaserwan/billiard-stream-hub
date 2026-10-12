@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
+import { Lock, User, AlertCircle, ArrowRight } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -37,62 +38,73 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#0b0f17] flex items-center justify-center p-4 antialiased text-slate-900 dark:text-slate-100">
       <Head>
-        <title>Login - BilliardStream Hub Enterprise</title>
+        <title>Sign In - BilliardStream Hub</title>
       </Head>
 
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8 max-w-md w-full shadow-2xl relative overflow-hidden">
-        <div className="absolute -top-24 -left-24 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="text-center mb-8">
-          <div className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-tr from-amber-500 to-emerald-500 flex items-center justify-center text-slate-950 font-black text-2xl shadow-xl shadow-emerald-500/20 mb-4">
-            🎱
+      <div className="bg-white dark:bg-[#111622] border border-slate-200 dark:border-slate-800 rounded-2xl p-8 max-w-sm w-full shadow-sm">
+        {/* Simple Brand */}
+        <div className="mb-6">
+          <div className="w-9 h-9 rounded-lg bg-emerald-600 text-white flex items-center justify-center font-bold text-base mb-3">
+            B
           </div>
-          <h2 className="text-xl font-bold tracking-tight text-white">BilliardStream Control</h2>
-          <p className="text-xs text-slate-400 mt-1">Enterprise Arena Operation & CCTV Gateway</p>
+          <h2 className="text-base font-semibold text-slate-900 dark:text-white">BilliardStream Hub</h2>
+          <p className="text-xs text-slate-500 mt-0.5">Arena Cashier &amp; CCTV Console</p>
         </div>
 
-        <form onSubmit={handleLogin} className="space-y-4">
+        <form onSubmit={handleLogin} className="space-y-3.5">
           <div>
-            <label className="block text-xs font-semibold text-slate-400 mb-1.5">Username</label>
-            <input
-              type="text"
-              required
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors"
-            />
+            <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Username</label>
+            <div className="relative">
+              <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                <User className="w-3.5 h-3.5" />
+              </span>
+              <input
+                type="text"
+                required
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg pl-9 pr-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
+              />
+            </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-400 mb-1.5">Password</label>
-            <input
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors"
-            />
+            <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Password</label>
+            <div className="relative">
+              <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                <Lock className="w-3.5 h-3.5" />
+              </span>
+              <input
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg pl-9 pr-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
+              />
+            </div>
           </div>
 
           {error && (
-            <div className="text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-xl p-3">
-              {error}
+            <div className="text-xs text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/40 rounded-lg p-2.5 flex items-center space-x-2">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{error}</span>
             </div>
           )}
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-slate-950 font-bold rounded-xl py-3 text-sm shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center space-x-2"
+            className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-medium rounded-lg py-2 text-xs transition-colors flex items-center justify-center space-x-1.5 mt-2"
           >
-            <span>{loading ? 'Memproses...' : 'Masuk ke Dashboard'}</span>
+            <span>{loading ? 'Memvalidasi...' : 'Masuk ke Dashboard'}</span>
+            <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </form>
 
-        <div className="mt-6 pt-4 border-t border-slate-800/80 text-center text-[11px] text-slate-500">
-          Default: <code className="text-slate-400">kasir / kasir123</code> atau <code className="text-slate-400">admin / admin123</code>
+        <div className="mt-5 pt-3 border-t border-slate-100 dark:border-slate-800 text-center text-[11px] text-slate-400">
+          Operator ID: <code className="text-slate-600 dark:text-slate-300 font-mono">kasir / kasir123</code>
         </div>
       </div>
     </div>
