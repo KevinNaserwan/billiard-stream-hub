@@ -32,8 +32,9 @@ export default function DashboardPage() {
   const [tables, setTables] = useState<TableItem[]>([]);
   const [orders, setOrders] = useState<OrderItem[]>([]);
   const [user, setUser] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'cameras'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'cameras' | 'highlights' | 'analytics'>('overview');
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
   
   // Custom Toast notifications (No default browser alert!)
   const [toasts, setToasts] = useState<ToastNotification[]>([]);
@@ -47,6 +48,13 @@ export default function DashboardPage() {
 
   // Live View Stream Modal (Interactive Live Player in Dashboard)
   const [previewTable, setPreviewTable] = useState<TableItem | null>(null);
+
+  // Gallery of clips (Nilai plus)
+  const [recentClips, setRecentClips] = useState<any[]>([
+    { id: 1, table: 'Table 03 - VIP Diamond', time: '18:22:15', player: 'Mas Kevin', file: 'clip_table3_1791804141.mp4' },
+    { id: 2, table: 'Table 01 - Standard Arena', time: '17:45:00', player: 'Rian S.', file: 'clip_table1_1791802100.mp4' },
+    { id: 3, table: 'Table 05 - Pro Tournament', time: '16:10:30', player: 'Dimas A.', file: 'clip_table5_1791798500.mp4' },
+  ]);
 
   const addToast = (title: string, message: string, type: 'order' | 'success' | 'error' = 'success') => {
     const id = `toast_${Date.now()}`;
@@ -241,102 +249,196 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      {/* Modern Sidebar */}
-      <aside className="w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col justify-between shrink-0 shadow-sm transition-colors duration-200">
+      {/* ================= COLLAPSIBLE MODERN SIDEBAR ================= */}
+      <aside
+        className={`${
+          isSidebarOpen ? 'w-64' : 'w-20'
+        } bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col justify-between shrink-0 shadow-sm transition-all duration-300 ease-in-out`}
+      >
         <div>
-          <div className="p-6 flex items-center space-x-3 border-b border-slate-200 dark:border-slate-800">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-emerald-500 flex items-center justify-center text-slate-950 font-black text-lg shadow-md shadow-emerald-500/20">
-              🎱
-            </div>
-            <div>
-              <h1 className="text-sm font-bold tracking-tight text-slate-900 dark:text-white leading-tight">BilliardStream</h1>
-              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Enterprise Suite v2.0</span>
+          {/* Brand & Toggle Icon Header */}
+          <div className="p-4 sm:p-5 flex items-center justify-between border-b border-slate-200 dark:border-slate-800">
+            <div className="flex items-center space-x-3 overflow-hidden">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-emerald-500 flex items-center justify-center text-slate-950 font-black text-xl shadow-md shadow-emerald-500/20 shrink-0">
+                🎱
+              </div>
+              {isSidebarOpen && (
+                <div className="truncate animate-fade-in">
+                  <h1 className="text-sm font-bold tracking-tight text-slate-900 dark:text-white leading-tight">BilliardStream</h1>
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Enterprise Suite v2.0</span>
+                </div>
+              )}
             </div>
           </div>
 
-          <nav className="p-4 space-y-1.5">
+          {/* Navigation Links with Clean Icons */}
+          <nav className="p-3 space-y-1.5">
             <button
               onClick={() => setActiveTab('overview')}
-              className={`w-full text-left flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+              title="Arena & Meja Live"
+              className={`w-full text-left flex items-center ${
+                isSidebarOpen ? 'space-x-3 px-3.5' : 'justify-center px-0'
+              } py-2.5 rounded-xl text-xs font-semibold transition-all ${
                 activeTab === 'overview'
                   ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20 shadow-sm'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50'
               }`}
             >
-              <span>Arena & Meja Live</span>
+              <span className="text-base shrink-0">🎯</span>
+              {isSidebarOpen && <span>Arena & Meja Live</span>}
             </button>
 
             <button
               onClick={() => setActiveTab('orders')}
-              className={`w-full text-left flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+              title="Pesanan F&B"
+              className={`w-full text-left flex items-center ${
+                isSidebarOpen ? 'justify-between px-3.5' : 'justify-center px-0 relative'
+              } py-2.5 rounded-xl text-xs font-semibold transition-all ${
                 activeTab === 'orders'
                   ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20 shadow-sm'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50'
               }`}
             >
-              <span>Pesanan F&B</span>
+              <div className="flex items-center space-x-3">
+                <span className="text-base shrink-0">🍔</span>
+                {isSidebarOpen && <span>Pesanan F&B</span>}
+              </div>
               {orders.length > 0 && (
-                <span className="bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                <span
+                  className={`${
+                    isSidebarOpen ? 'relative' : 'absolute -top-1 -right-1'
+                  } bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 text-[10px] font-bold px-2 py-0.5 rounded-full`}
+                >
                   {orders.length}
                 </span>
               )}
             </button>
 
             <button
+              onClick={() => setActiveTab('highlights')}
+              title="Klip Rekaman 30s"
+              className={`w-full text-left flex items-center ${
+                isSidebarOpen ? 'space-x-3 px-3.5' : 'justify-center px-0'
+              } py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                activeTab === 'highlights'
+                  ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20 shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50'
+              }`}
+            >
+              <span className="text-base shrink-0">✂️</span>
+              {isSidebarOpen && <span>Galeri Klip 30s</span>}
+            </button>
+
+            <button
               onClick={() => setActiveTab('cameras')}
-              className={`w-full text-left flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+              title="CCTV RTSP Topology"
+              className={`w-full text-left flex items-center ${
+                isSidebarOpen ? 'space-x-3 px-3.5' : 'justify-center px-0'
+              } py-2.5 rounded-xl text-xs font-semibold transition-all ${
                 activeTab === 'cameras'
                   ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20 shadow-sm'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50'
               }`}
             >
-              <span>CCTV RTSP Topology</span>
+              <span className="text-base shrink-0">📹</span>
+              {isSidebarOpen && <span>Topologi Kamera</span>}
+            </button>
+
+            <button
+              onClick={() => setActiveTab('analytics')}
+              title="Ringkasan Omset & Durasi"
+              className={`w-full text-left flex items-center ${
+                isSidebarOpen ? 'space-x-3 px-3.5' : 'justify-center px-0'
+              } py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                activeTab === 'analytics'
+                  ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20 shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50'
+              }`}
+            >
+              <span className="text-base shrink-0">📈</span>
+              {isSidebarOpen && <span>Omset & Durasi</span>}
             </button>
           </nav>
         </div>
 
         {/* User Card & Logout */}
-        <div className="p-4 border-t border-slate-200 dark:border-slate-800 space-y-3">
-          <div className="flex items-center justify-between bg-slate-100 dark:bg-slate-950 p-3 rounded-2xl border border-slate-200 dark:border-slate-800">
-            <div className="overflow-hidden">
-              <div className="text-xs font-bold text-slate-900 dark:text-white truncate">{user?.fullName || 'Kasir Frontdesk'}</div>
-              <div className="text-[10px] text-slate-500 dark:text-slate-400 capitalize">{user?.role || 'Operator'}</div>
+        <div className="p-3 border-t border-slate-200 dark:border-slate-800">
+          {isSidebarOpen ? (
+            <div className="flex items-center justify-between bg-slate-100 dark:bg-slate-950 p-2.5 rounded-2xl border border-slate-200 dark:border-slate-800">
+              <div className="overflow-hidden">
+                <div className="text-xs font-bold text-slate-900 dark:text-white truncate">{user?.fullName || 'Kasir'}</div>
+                <div className="text-[10px] text-slate-500 dark:text-slate-400 capitalize">{user?.role || 'Operator'}</div>
+              </div>
+              <button
+                onClick={handleLogout}
+                title="Logout dari sistem"
+                className="bg-rose-50 dark:bg-rose-500/10 hover:bg-rose-100 dark:hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-500/20 text-xs font-bold px-2 py-1 rounded-xl transition-colors shrink-0"
+              >
+                Keluar
+              </button>
             </div>
+          ) : (
             <button
               onClick={handleLogout}
-              title="Logout dari sistem"
-              className="bg-rose-50 dark:bg-rose-500/10 hover:bg-rose-100 dark:hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-500/20 text-xs font-bold px-2.5 py-1.5 rounded-xl transition-colors shrink-0"
+              title="Logout"
+              className="w-full flex justify-center p-2 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-sm font-bold"
             >
-              Keluar
+              🚪
             </button>
-          </div>
+          )}
         </div>
       </aside>
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        <header className="h-16 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/60 backdrop-blur px-6 flex items-center justify-between sticky top-0 z-30 transition-colors">
-          <h2 className="text-sm font-bold text-slate-900 dark:text-white capitalize">Monitoring Arena Meja Live</h2>
-          
+        <header className="h-16 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/60 backdrop-blur px-4 sm:px-6 flex items-center justify-between sticky top-0 z-30 transition-colors">
           <div className="flex items-center space-x-3">
+            {/* Sidebar Toggle Button (Hide / Show) */}
+            <button
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              title={isSidebarOpen ? 'Sembunyikan Sidebar' : 'Tampilkan Sidebar'}
+              className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-sm transition-all border border-slate-200 dark:border-slate-700"
+            >
+              {isSidebarOpen ? '◀' : '▶'}
+            </button>
+            <h2 className="text-sm font-bold text-slate-900 dark:text-white capitalize">
+              {activeTab === 'overview' && 'Monitoring Arena Meja Live'}
+              {activeTab === 'orders' && 'Tiket Pesanan F&B Masuk'}
+              {activeTab === 'highlights' && 'Galeri Rekaman Klip 30 Detik Pelanggan'}
+              {activeTab === 'cameras' && 'Topologi IP Camera & WebRTC Gateway'}
+              {activeTab === 'analytics' && 'Ringkasan Omset Harian & Jam Bermain'}
+            </h2>
+          </div>
+          
+          <div className="flex items-center space-x-2 sm:space-x-3">
+            {/* Link buka Layar Pelanggan (Customer Display) */}
+            <a
+              href="/customer-display"
+              target="_blank"
+              rel="noreferrer"
+              className="hidden md:flex items-center space-x-1.5 bg-emerald-50 dark:bg-emerald-500/10 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-semibold px-3 py-1.5 rounded-xl border border-emerald-200 dark:border-emerald-500/20 transition-all"
+            >
+              <span>🖥️ Layar Pelanggan</span>
+            </a>
+
             {/* Theme Toggle Button (Light/Dark Mode) */}
             <button
               onClick={toggleTheme}
               className="flex items-center space-x-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold px-3 py-1.5 rounded-xl transition-all border border-slate-200 dark:border-slate-700"
             >
-              <span>{theme === 'dark' ? '☀️ Mode Terang' : '🌙 Mode Gelap'}</span>
+              <span>{theme === 'dark' ? '☀️ Terang' : '🌙 Gelap'}</span>
             </button>
 
             <button
               onClick={() => fetchTables()}
               className="text-xs bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 px-3.5 py-1.5 rounded-xl text-slate-700 dark:text-slate-300 font-medium transition-colors border border-slate-200 dark:border-slate-700"
             >
-              Refresh Data
+              Refresh
             </button>
           </div>
         </header>
 
-        <main className="p-6 space-y-6 max-w-7xl w-full mx-auto">
+        <main className="p-4 sm:p-6 space-y-6 max-w-7xl w-full mx-auto">
           {activeTab === 'overview' && (
             <>
               {/* Quick Opener Banner */}
@@ -481,6 +583,44 @@ export default function DashboardPage() {
             </div>
           )}
 
+          {/* Nilai Plus: Galeri Klip Video 30s Pelanggan */}
+          {activeTab === 'highlights' && (
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 space-y-4 shadow-sm dark:shadow-xl">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">Arsip Klip 30 Detik Tersimpan</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Daftar momen rekaman pukulan yang di-download oleh pelanggan meja ke galeri.</p>
+                </div>
+                <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-3 py-1 rounded-xl">
+                  {recentClips.length} Klip Tersimpan
+                </span>
+              </div>
+
+              <div className="space-y-3">
+                {recentClips.map(clip => (
+                  <div key={clip.id} className="flex justify-between items-center p-3.5 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800 text-xs">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold text-base">
+                        🎬
+                      </div>
+                      <div>
+                        <div className="font-bold text-slate-900 dark:text-white">{clip.table} ({clip.player})</div>
+                        <div className="text-[11px] text-slate-500 font-mono">Waktu Klip: {clip.time} · File: {clip.file}</div>
+                      </div>
+                    </div>
+                    <a
+                      href={`/clips/${clip.file}`}
+                      download
+                      className="bg-slate-200 dark:bg-slate-800 hover:bg-emerald-500 hover:text-black text-slate-700 dark:text-slate-300 font-bold px-3 py-1.5 rounded-xl transition-colors text-xs"
+                    >
+                      Unduh Ulang
+                    </a>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {activeTab === 'cameras' && (
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 space-y-4 shadow-sm dark:shadow-xl">
               <h3 className="text-sm font-bold text-slate-900 dark:text-white">Topologi IP Camera & WebRTC WHEP</h3>
@@ -494,6 +634,29 @@ export default function DashboardPage() {
                     <span className="text-emerald-700 dark:text-emerald-400 font-mono text-[10px] bg-emerald-100 dark:bg-emerald-500/10 px-2.5 py-1 rounded-lg">WHEP ACTIVE</span>
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {/* Nilai Plus: Ringkasan Omset & Durasi Sesi */}
+          {activeTab === 'analytics' && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm">
+                  <span className="text-xs text-slate-500">Estimasi Omset Hari Ini</span>
+                  <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">Rp 1.450.000</div>
+                  <span className="text-[10px] text-slate-400">Total 18 Jam Main</span>
+                </div>
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm">
+                  <span className="text-xs text-slate-500">Meja Paling Ramai</span>
+                  <div className="text-xl font-bold text-slate-900 dark:text-white mt-1">Table 03 (VIP Diamond)</div>
+                  <span className="text-[10px] text-slate-400">5 Jam Penggunaan</span>
+                </div>
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm">
+                  <span className="text-xs text-slate-500">Total Klip 30s Diunduh</span>
+                  <div className="text-2xl font-black text-amber-500 mt-1">24 Video</div>
+                  <span className="text-[10px] text-slate-400">Highlight Trickshots</span>
+                </div>
               </div>
             </div>
           )}
