@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Billiard Live Stream & Clipper</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    /* Mobile-first touch & layout optimization */
+    body { touch-action: manipulation; }
+    .video-viewport { aspect-ratio: 16 / 9; }
+  </style>
+</head>
+<body class="bg-black text-slate-100 min-h-screen flex flex-col justify-between select-none">
+
+  <!-- Top Floating HUD: Table & Countdown -->
+  <header class="bg-slate-950/80 backdrop-blur border-b border-slate-800 p-4 sticky top-0 z-40 flex items-center justify-between">
+    <div>
+      <span class="text-xs uppercase tracking-wider text-emerald-400 font-bold block">Live CCTV Feed</span>
+      <h1 id="tableNameDisplay" class="text-base font-extrabold text-white">Memuat Meja...</h1>
+    </div>
+    
+    <!-- Timer Box -->
+    <div class="bg-slate-900 border border-emerald-500/30 rounded-2xl px-4 py-2 text-right shadow-lg">
+      <span class="text-[10px] uppercase tracking-wider text-slate-400 block font-medium">Sisa Waktu</span>
+      <div id="countdownTimer" class="text-lg font-black text-emerald-400 font-mono tracking-tight">--:--:--</div>
+    </div>
+  </header>
+
+  <!-- Main Live Video Stream Player Area -->
+  <main class="flex-1 flex flex-col items-center justify-center p-3 relative">
+    <div class="w-full max-w-xl relative rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 shadow-2xl video-viewport flex items-center justify-center">
+      
+      <!-- Video Element -->
+      <video id="streamVideo" autoplay playsinline muted class="w-full h-full object-cover"></video>
+
+      <!-- Watermark Badge -->
+      <div class="absolute top-3 left-3 bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-full text-[10px] font-bold text-white flex items-center space-x-1.5 border border-white/10">
+        <span class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
+        <span>REC / LIVE</span>
+      </div>
+
+      <!-- Live Lag Status -->
+      <div class="absolute bottom-3 right-3 bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-lg text-[10px] font-mono text-emerald-400 border border-white/10">
+        LATENCY: &lt;300ms
+      </div>
+
+      <!-- Session Expired Overlay -->
+      <div id="expiredOverlay" class="absolute inset-0 bg-slate-950/95 backdrop-blur-md hidden flex-col items-center justify-center text-center p-6 space-y-3 z-30">
+        <div class="w-14 h-14 rounded-full bg-rose-500/20 text-rose-500 flex items-center justify-center text-2xl mb-1">
+          <i class="fa-solid fa-hourglass-end"></i>
+        </div>
+        <h2 class="text-xl font-black text-white">Waktu Bermain Habis</h2>
+        <p class="text-xs text-slate-400 max-w-xs">
+          Akses siaran video meja telah dihentikan secara otomatis. Silakan hubungi kasir jika ingin memperpanjang waktu bermain.
+        </p>
+      </div>
+
+    </div>
+
+    <!-- Quick Action: Highlight Clipper Button -->
+    <div class="w-full max-w-xl mt-4 space-y-3">
+      <button id="btnClip" onclick="requestClip30s()" class="w-full bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-300 hover:to-amber-500 text-slate-950 font-black py-4 rounded-2xl text-base shadow-xl shadow-amber-500/20 active:scale-[0.98] transition-all flex items-center justify-center space-x-3">
+        <i class="fa-solid fa-scissors text-xl"></i>
+        <span>SIMPAN 30 DETIK TERAKHIR</span>
+      </button>
+
+      <p id="clipStatusMsg" class="text-center text-xs text-slate-400 hidden">
+        Sedang memotong video rekaman pukulan kerenmu... ⏳
+      </p>
+
+      <!-- Download Button Pop-up when ready -->
+      <a id="downloadLinkBtn" href="#" download class="hidden w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold py-3.5 rounded-2xl text-center text-sm shadow-lg shadow-emerald-500/20 block">
+        <i class="fa-solid fa-download mr-2"></i> Download Video ke Galeri HP
+      </a>
+    </div>
+  </main>
+
+  <!-- Bottom Navigation / Extra Features (Order F&B) -->
+  <footer class="bg-slate-950 border-t border-slate-800 p-4 flex items-center justify-around">
+    <button onclick="toggleFnbModal()" class="flex flex-col items-center text-slate-400 hover:text-amber-400 transition-colors">
+      <i class="fa-solid fa-utensils text-lg mb-1"></i>
+      <span class="text-[11px] font-semibold">Pesan Makanan & Minuman</span>
+    </button>
+  </footer>
+
+  <!-- F&B Order Modal -->
+  <div id="fnbModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-t-3xl sm:rounded-3xl p-6 max-w-md w-full space-y-4 max-h-[85vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+        <h3 class="text-base font-bold text-white flex items-center">
+          <i class="fa-solid fa-burger text-amber-400 mr-2"></i> Menu Cafe & Bar
+        </h3>
+        <button onclick="toggleFnbModal()" class="text-slate-400 hover:text-white text-lg">&times;</button>
+      </div>
+
+      <!-- Sample Menu Items -->
+      <div class="space-y-3">
+        <div class="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800">
+          <div>
+            <div class="text-sm font-semibold text-white">Iced Americano</div>
+            <div class="text-xs text-amber-400">Rp 25.000</div>
+          </div>
+          <button onclick="addToCart('Iced Americano', 25000)" class="bg-slate-800 hover:bg-emerald-500 hover:text-black text-xs font-bold px-3 py-1.5 rounded-lg text-emerald-400">
+            + Tambah
+          </button>
+        </div>
+
+        <div class="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800">
+          <div>
+            <div class="text-sm font-semibold text-white">French Fries Platter</div>
+            <div class="text-xs text-amber-400">Rp 28.000</div>
+          </div>
+          <button onclick="addToCart('French Fries Platter', 28000)" class="bg-slate-800 hover:bg-emerald-500 hover:text-black text-xs font-bold px-3 py-1.5 rounded-lg text-emerald-400">
+            + Tambah
+          </button>
+        </div>
+
+        <div class="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800">
+          <div>
+            <div class="text-sm font-semibold text-white">Mineral Water 600ml</div>
+            <div class="text-xs text-amber-400">Rp 8.000</div>
+          </div>
+          <button onclick="addToCart('Mineral Water 600ml', 8000)" class="bg-slate-800 hover:bg-emerald-500 hover:text-black text-xs font-bold px-3 py-1.5 rounded-lg text-emerald-400">
+            + Tambah
+          </button>
+        </div>
+      </div>
+
+      <!-- Cart Summary -->
+      <div class="border-t border-slate-800 pt-3">
+        <div id="cartSummary" class="text-xs text-slate-400 mb-3 italic">Keranjang masih kosong.</div>
+        <button id="btnSubmitOrder" onclick="submitOrder()" disabled class="w-full bg-emerald-500 disabled:opacity-40 text-slate-950 font-bold py-3 rounded-xl text-xs">
+          Kirim Pesanan ke Kasir
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/player.js"></script>
+</body>
+</html>

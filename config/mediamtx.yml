@@ -1,0 +1,43 @@
+# MediaMTX Configuration for BilliardStream Hub
+# Optimized for Ultra-Low Latency WebRTC (<500ms) over Local Wi-Fi
+
+logLevel: info
+logDestinations: [stdout]
+
+# RTSP listener for cameras
+rtspDisable: false
+rtspAddress: :8554
+
+# WebRTC (WHEP) for mobile browser player
+webrtcDisable: false
+webrtcAddress: :8889
+webrtcAllowOrigins: ['*']
+webrtcLocalUDPAddress: :8189
+webrtcIPsFromInterfaces: true
+
+# HLS fallback (disabled by default to maintain <500ms latency)
+hlsDisable: true
+
+# RTMP listener (optional)
+rtmpDisable: true
+
+# Predefined paths per billiard table
+paths:
+  table1:
+    source: rtsp://admin:password123@192.168.1.101:554/Streaming/Channels/101
+    sourceOnDemand: true
+  table2:
+    source: rtsp://admin:password123@192.168.1.102:554/Streaming/Channels/101
+    sourceOnDemand: true
+  table3:
+    source: rtsp://admin:password123@192.168.1.103:554/Streaming/Channels/101
+    sourceOnDemand: true
+  table4:
+    source: rtsp://admin:password123@192.168.1.104:554/Streaming/Channels/101
+    sourceOnDemand: true
+  table5:
+    source: rtsp://admin:password123@192.168.1.105:554/Streaming/Channels/101
+    sourceOnDemand: true
+  table6:
+    source: rtsp://admin:password123@192.168.1.106:554/Streaming/Channels/101
+    sourceOnDemand: true
