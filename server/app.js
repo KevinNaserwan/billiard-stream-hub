@@ -103,7 +103,7 @@ app.post('/api/sessions/create', requireAuth, async (req, res) => {
     // Construct local player URL
     const host = req.get('host');
     const protocol = req.protocol;
-    const playerUrl = `${protocol}://${host}/player.html?token=${session.token}`;
+    const playerUrl = `${protocol}://${host}/play?token=${session.token}`;
     const qrDataUrl = await QRCode.toDataURL(playerUrl);
 
     res.json({
