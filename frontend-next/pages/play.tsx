@@ -1,6 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
+import { 
+  Video, 
+  Clock, 
+  Bell, 
+  Scissors, 
+  Download, 
+  Trophy, 
+  UtensilsCrossed, 
+  Check, 
+  Plus, 
+  Minus, 
+  X, 
+  AlertCircle
+} from 'lucide-react';
 
 export default function PlayerPage() {
   const router = useRouter();
@@ -152,11 +166,19 @@ export default function PlayerPage() {
         <title>Live Table Stream - BilliardStream Hub</title>
       </Head>
 
-      {/* Top Floating HUD: Responsive Header */}
-      <header className="max-w-7xl mx-auto w-full flex justify-between items-center bg-slate-950/90 backdrop-blur p-3 sm:p-4 rounded-2xl border border-slate-800 shadow-xl z-20">
-        <div>
-          <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider block">Overhead Live Feed</span>
-          <h1 className="text-sm sm:text-base font-black text-white">{session?.tableName || 'Meja Billiard'}</h1>
+      {/* Top Floating HUD: Responsive Clean Header */}
+      <header className="max-w-7xl mx-auto w-full flex justify-between items-center bg-[#111622]/90 backdrop-blur-md px-4 py-3 rounded-xl border border-slate-800 shadow-sm z-20">
+        <div className="flex items-center space-x-3">
+          <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xs">
+            {session?.tableName ? session.tableName.replace(/[^0-9]/g, '') || '01' : '01'}
+          </div>
+          <div>
+            <div className="flex items-center space-x-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+              <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">Overhead Camera</span>
+            </div>
+            <h1 className="text-xs sm:text-sm font-semibold text-white tracking-tight">{session?.tableName || 'Meja Billiard'}</h1>
+          </div>
         </div>
         
         <div className="flex items-center space-x-2 sm:space-x-3">
@@ -164,32 +186,37 @@ export default function PlayerPage() {
           <button
             onClick={handleCallWaiter}
             disabled={waiterCalled}
-            className={`text-xs px-3 py-1.5 rounded-xl font-bold transition-all border ${
+            className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-all border flex items-center space-x-1.5 ${
               waiterCalled
-                ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
-                : 'bg-slate-900 text-slate-300 border-slate-800 hover:text-white'
+                ? 'bg-amber-500/10 text-amber-300 border-amber-500/30'
+                : 'bg-slate-900 text-slate-300 border-slate-800 hover:text-white hover:bg-slate-800'
             }`}
           >
-            {waiterCalled ? '✓ Dipanggil' : '🔔 Panggil Waiter'}
+            <Bell className="w-3.5 h-3.5 text-amber-400" />
+            <span>{waiterCalled ? 'Kru Dipanggil' : 'Panggil Waiter'}</span>
           </button>
 
-          <div className="bg-slate-900 border border-emerald-500/30 px-3 sm:px-4 py-1.5 rounded-xl text-right">
-            <span className="text-[9px] text-slate-400 block font-medium">Sisa Waktu</span>
-            <span className="text-sm sm:text-lg font-black text-emerald-400 font-mono tracking-tight">{formatTimer(remaining)}</span>
+          {/* Sisa Waktu Display */}
+          <div className="bg-slate-900 border border-slate-800 px-3 py-1 rounded-lg text-right flex items-center space-x-2">
+            <Clock className="w-3.5 h-3.5 text-emerald-400" />
+            <div>
+              <span className="text-[9px] text-slate-500 block leading-tight font-medium">Sisa Waktu</span>
+              <span className="text-xs sm:text-sm font-semibold text-emerald-400 font-mono tracking-tight">{formatTimer(remaining)}</span>
+            </div>
           </div>
         </div>
       </header>
 
       {/* Main Responsive Video Area: Full on Mobile, Large Cinema View on Desktop */}
-      <main className="my-auto w-full max-w-7xl mx-auto flex flex-col items-center justify-center p-0 sm:p-2 md:p-4 space-y-4">
+      <main className="my-auto w-full max-w-7xl mx-auto flex flex-col items-center justify-center p-0 sm:p-2 md:p-4 space-y-3.5">
         
         {/* Live Video Viewport */}
-        <div className="w-full relative rounded-2xl sm:rounded-3xl overflow-hidden bg-slate-950 border border-slate-800 shadow-2xl flex items-center justify-center aspect-video max-h-[75vh]">
+        <div className="w-full relative rounded-xl sm:rounded-2xl overflow-hidden bg-black border border-slate-800/80 shadow-2xl flex items-center justify-center aspect-video max-h-[75vh]">
           
           {/* Live Badge */}
-          <div className="absolute top-3 left-3 bg-black/60 backdrop-blur px-2.5 py-1 rounded-full text-[10px] font-bold text-white flex items-center space-x-1.5 border border-white/10 z-20">
-            <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
-            <span>LIVE CAM (1080p)</span>
+          <div className="absolute top-3 left-3 bg-slate-950/80 backdrop-blur px-2.5 py-1 rounded-md text-[10px] font-medium text-white flex items-center space-x-1.5 border border-white/10 z-20">
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+            <span>LIVE 1080p</span>
           </div>
 
           {/* WebRTC Video Element / Viewport */}
@@ -201,116 +228,129 @@ export default function PlayerPage() {
           />
 
           {/* Stream Information Overlay */}
-          <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur px-2.5 py-1 rounded-lg text-[10px] font-mono text-emerald-400 border border-white/10">
-            LATENCY: &lt; 300ms (LAN)
+          <div className="absolute bottom-3 right-3 bg-slate-950/80 backdrop-blur px-2 py-0.5 rounded text-[10px] font-mono text-slate-400 border border-white/10">
+            LAN Latency &lt; 300ms
           </div>
 
           {/* Expiry Hard Disconnect Overlay */}
           {isExpired && (
-            <div className="absolute inset-0 bg-slate-950/95 backdrop-blur-md z-30 flex flex-col items-center justify-center p-6 text-center space-y-3">
-              <div className="w-14 h-14 rounded-full bg-rose-500/20 text-rose-500 flex items-center justify-center text-2xl">
-                ⏳
+            <div className="absolute inset-0 bg-[#090d14]/95 backdrop-blur-sm z-30 flex flex-col items-center justify-center p-6 text-center space-y-2.5">
+              <div className="w-10 h-10 rounded-full bg-rose-500/10 text-rose-400 flex items-center justify-center border border-rose-500/20">
+                <AlertCircle className="w-5 h-5" />
               </div>
-              <h2 className="text-xl font-black text-white">Waktu Bermain Habis</h2>
+              <h2 className="text-sm font-semibold text-white">Sesi Waktu Telah Berakhir</h2>
               <p className="text-xs text-slate-400 max-w-xs">
-                Akses live streaming telah dihentikan secara otomatis. Silakan hubungi kasir jika ingin menambah durasi.
+                Akses video streaming overhead telah ditutup otomatis oleh edge server. Silakan hubungi kasir untuk perpanjangan.
               </p>
             </div>
           )}
         </div>
 
         {/* Action Controls Toolbar (Simpan Klip, Digital Scoreboard, Order F&B) */}
-        <div className="w-full max-w-2xl space-y-3">
+        <div className="w-full max-w-xl space-y-2.5">
           
           {/* Primary Action: Simpan 30 Detik Terakhir */}
           <button
             onClick={handleClip30s}
             disabled={clipLoading || isExpired}
-            className="w-full bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-300 hover:to-amber-500 disabled:opacity-50 text-slate-950 font-black py-3.5 sm:py-4 rounded-2xl text-sm sm:text-base shadow-xl shadow-amber-500/20 active:scale-[0.99] transition-all flex items-center justify-center space-x-2"
+            className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-medium py-3 rounded-xl text-xs sm:text-sm shadow-sm transition-colors flex items-center justify-center space-x-2"
           >
-            <span>{clipLoading ? 'Memotong Rekaman Pukulan... ⏳' : '✂️ SIMPAN 30 DETIK TERAKHIR'}</span>
+            <Scissors className="w-4 h-4" />
+            <span>{clipLoading ? 'Memproses klip video...' : 'Simpan 30 Detik Terakhir (Trickshot)'}</span>
           </button>
 
           {clipUrl && (
             <a
               href={clipUrl}
               download
-              className="block text-center bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold py-3 rounded-2xl text-xs sm:text-sm shadow-lg shadow-emerald-500/20 transition-all animate-bounce"
+              className="flex items-center justify-center space-x-2 bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-emerald-500/30 font-medium py-2.5 rounded-xl text-xs transition-colors"
             >
-              📥 Download Video ke Galeri HP
+              <Download className="w-4 h-4" />
+              <span>Unduh Video ke Galeri</span>
             </a>
           )}
 
           {/* Secondary Features Toolbar: Scoreboard & F&B Menu */}
-          <div className="grid grid-cols-2 gap-3 pt-1">
+          <div className="grid grid-cols-2 gap-2.5">
             <button
               onClick={() => setShowScoreboard(!showScoreboard)}
-              className="bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-200 font-bold py-2.5 rounded-xl text-xs flex items-center justify-center space-x-2 transition-colors"
+              className="bg-[#111622] hover:bg-slate-800 border border-slate-800 text-slate-300 font-medium py-2 rounded-lg text-xs flex items-center justify-center space-x-1.5 transition-colors"
             >
-              <span>🎯 {showScoreboard ? 'Tutup Papan Skor' : 'Papan Skor Game'}</span>
+              <Trophy className="w-3.5 h-3.5 text-amber-400" />
+              <span>{showScoreboard ? 'Tutup Papan Skor' : 'Papan Skor Game'}</span>
             </button>
 
             <button
               onClick={() => setShowFnbModal(true)}
-              className="bg-slate-900 hover:bg-slate-800 border border-slate-800 text-amber-400 font-bold py-2.5 rounded-xl text-xs flex items-center justify-center space-x-2 transition-colors"
+              className="bg-[#111622] hover:bg-slate-800 border border-slate-800 text-slate-300 font-medium py-2 rounded-lg text-xs flex items-center justify-center space-x-1.5 transition-colors"
             >
-              <span>🍔 Pesan Snack & Minum</span>
+              <UtensilsCrossed className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Pesan Snack & Minum</span>
             </button>
           </div>
 
+
           {/* Interactive Digital Scoreboard Component */}
           {showScoreboard && (
-            <div className="bg-slate-900/95 border border-slate-800 p-4 rounded-2xl space-y-3 backdrop-blur animate-fade-in">
-              <div className="text-center text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                Digital Frame Scorekeeper
+            <div className="bg-[#111622] border border-slate-800 p-4 rounded-xl space-y-3 shadow-md">
+              <div className="flex justify-between items-center border-b border-slate-800 pb-2">
+                <span className="text-[11px] font-semibold text-slate-300 uppercase tracking-wider">
+                  Digital Frame Scoreboard
+                </span>
+                <button
+                  onClick={() => { setPlayer1Score(0); setPlayer2Score(0); }}
+                  className="text-[10px] text-slate-500 hover:text-slate-300 transition-colors"
+                >
+                  Reset Skor
+                </button>
               </div>
-              <div className="grid grid-cols-2 gap-4 text-center">
+              <div className="grid grid-cols-2 gap-3 text-center">
                 {/* Player 1 */}
-                <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-2">
+                <div className="bg-[#090d14] p-3 rounded-lg border border-slate-800 space-y-2">
                   <input
                     type="text"
                     value={player1Name}
                     onChange={(e) => setPlayer1Name(e.target.value)}
-                    className="w-full text-center bg-transparent text-xs font-bold text-white border-b border-slate-800 pb-1 focus:outline-none"
+                    className="w-full text-center bg-transparent text-xs font-medium text-slate-200 border-b border-slate-800 pb-1 focus:outline-none focus:border-emerald-500"
                   />
-                  <div className="text-3xl font-black text-emerald-400 font-mono">{player1Score}</div>
+                  <div className="text-3xl font-bold text-emerald-400 font-mono">{player1Score}</div>
                   <div className="flex justify-center space-x-2">
                     <button
                       onClick={() => setPlayer1Score(Math.max(0, player1Score - 1))}
-                      className="w-7 h-7 rounded-lg bg-slate-800 text-slate-300 font-bold text-xs"
+                      className="w-7 h-7 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-xs flex items-center justify-center transition-colors"
                     >
-                      -
+                      <Minus className="w-3 h-3" />
                     </button>
                     <button
                       onClick={() => setPlayer1Score(player1Score + 1)}
-                      className="w-7 h-7 rounded-lg bg-emerald-500 text-slate-950 font-bold text-xs"
+                      className="w-7 h-7 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs flex items-center justify-center transition-colors"
                     >
-                      +
+                      <Plus className="w-3 h-3" />
                     </button>
                   </div>
                 </div>
 
                 {/* Player 2 */}
-                <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-2">
+                <div className="bg-[#090d14] p-3 rounded-lg border border-slate-800 space-y-2">
                   <input
                     type="text"
                     value={player2Name}
                     onChange={(e) => setPlayer2Name(e.target.value)}
-                    className="w-full text-center bg-transparent text-xs font-bold text-white border-b border-slate-800 pb-1 focus:outline-none"
+                    className="w-full text-center bg-transparent text-xs font-medium text-slate-200 border-b border-slate-800 pb-1 focus:outline-none focus:border-amber-500"
                   />
-                  <div className="text-3xl font-black text-amber-400 font-mono">{player2Score}</div>
+                  <div className="text-3xl font-bold text-amber-400 font-mono">{player2Score}</div>
                   <div className="flex justify-center space-x-2">
                     <button
                       onClick={() => setPlayer2Score(Math.max(0, player2Score - 1))}
-                      className="w-7 h-7 rounded-lg bg-slate-800 text-slate-300 font-bold text-xs"
+                      className="w-7 h-7 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-xs flex items-center justify-center transition-colors"
                     >
-                      -
+                      <Minus className="w-3 h-3" />
                     </button>
                     <button
                       onClick={() => setPlayer2Score(player2Score + 1)}
-                      className="w-7 h-7 rounded-lg bg-amber-500 text-slate-950 font-bold text-xs"
+                      className="w-7 h-7 rounded bg-amber-600 hover:bg-amber-500 text-white font-medium text-xs flex items-center justify-center transition-colors"
                     >
-                      +
+                      <Plus className="w-3 h-3" />
                     </button>
                   </div>
                 </div>
@@ -324,37 +364,40 @@ export default function PlayerPage() {
 
       {/* Modal Pemesanan Menu F&B */}
       {showFnbModal && (
-        <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-t-3xl sm:rounded-3xl p-6 max-w-md w-full max-h-[85vh] flex flex-col justify-between shadow-2xl">
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-[#111622] border border-slate-800 rounded-t-2xl sm:rounded-2xl p-5 max-w-md w-full max-h-[85vh] flex flex-col justify-between shadow-2xl">
             <div>
-              <div className="flex justify-between items-center border-b border-slate-800 pb-3 mb-4">
-                <h3 className="text-sm font-bold text-white flex items-center space-x-2">
-                  <span>🍔 Menu Makanan & Minuman Meja</span>
-                </h3>
-                <button onClick={() => setShowFnbModal(false)} className="text-slate-400 hover:text-white text-lg">&times;</button>
+              <div className="flex justify-between items-center border-b border-slate-800 pb-3 mb-3">
+                <div className="flex items-center space-x-2">
+                  <UtensilsCrossed className="w-4 h-4 text-emerald-400" />
+                  <h3 className="text-xs font-semibold text-white uppercase tracking-wider">Menu F&amp;B Meja</h3>
+                </div>
+                <button onClick={() => setShowFnbModal(false)} className="text-slate-400 hover:text-white p-1">
+                  <X className="w-4 h-4" />
+                </button>
               </div>
 
               {/* Menu List */}
-              <div className="space-y-3 overflow-y-auto max-h-[48vh] pr-1">
+              <div className="space-y-2 overflow-y-auto max-h-[48vh] pr-1">
                 {menuItems.map(item => (
-                  <div key={item.id} className="flex justify-between items-center p-3 bg-slate-950 rounded-xl border border-slate-800 text-xs">
+                  <div key={item.id} className="flex justify-between items-center p-2.5 bg-[#090d14] rounded-lg border border-slate-800 text-xs">
                     <div>
-                      <div className="font-bold text-white">{item.name}</div>
-                      <div className="text-amber-400 font-medium">Rp {item.price.toLocaleString('id-ID')}</div>
+                      <div className="font-medium text-slate-200">{item.name}</div>
+                      <div className="text-slate-400 text-[11px]">Rp {item.price.toLocaleString('id-ID')}</div>
                     </div>
                     <div className="flex items-center space-x-2">
                       <button
                         onClick={() => updateCart(item.id, -1)}
-                        className="w-6 h-6 rounded bg-slate-800 text-slate-300 font-bold flex items-center justify-center"
+                        className="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition-colors"
                       >
-                        -
+                        <Minus className="w-3 h-3" />
                       </button>
-                      <span className="w-5 text-center font-bold text-white font-mono">{cart[item.id] || 0}</span>
+                      <span className="w-5 text-center font-medium text-white font-mono">{cart[item.id] || 0}</span>
                       <button
                         onClick={() => updateCart(item.id, 1)}
-                        className="w-6 h-6 rounded bg-emerald-500 text-slate-950 font-bold flex items-center justify-center"
+                        className="w-6 h-6 rounded bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center transition-colors"
                       >
-                        +
+                        <Plus className="w-3 h-3" />
                       </button>
                     </div>
                   </div>
@@ -364,25 +407,33 @@ export default function PlayerPage() {
 
             {/* Cart Footer */}
             <div className="border-t border-slate-800 pt-3 mt-3 space-y-2">
-              <div className="flex justify-between text-xs font-bold text-white">
-                <span>Total Pesanan:</span>
-                <span className="text-amber-400">Rp {totalCartPrice.toLocaleString('id-ID')}</span>
+              <div className="flex justify-between text-xs font-medium text-slate-300">
+                <span>Total Estimasi:</span>
+                <span className="text-white font-semibold">Rp {totalCartPrice.toLocaleString('id-ID')}</span>
               </div>
               <button
                 onClick={handleSendFnbOrder}
                 disabled={totalCartPrice === 0 || orderSent}
-                className="w-full bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 text-slate-950 font-bold py-3 rounded-xl text-xs transition-all"
+                className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white font-medium py-2 rounded-lg text-xs transition-colors flex items-center justify-center space-x-1.5"
               >
-                {orderSent ? '✓ Pesanan Berhasil Dikirim!' : 'Kirim Pesanan ke Kasir'}
+                {orderSent ? (
+                  <>
+                    <Check className="w-3.5 h-3.5" />
+                    <span>Pesanan Berhasil Dikirim</span>
+                  </>
+                ) : (
+                  <span>Kirim Pesanan ke Kasir</span>
+                )}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      <footer className="text-center text-[10px] sm:text-xs text-slate-500 py-2">
+      <footer className="text-center text-[10px] text-slate-600 py-1">
         BilliardStream Hub On-Premise · Ultra-Low Latency WebRTC
       </footer>
     </div>
   );
 }
+

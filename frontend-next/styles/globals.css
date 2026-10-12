@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   }
 
   body {
@@ -13,12 +13,22 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
+
+  /* Sharp focus rings */
+  input:focus-visible, select:focus-visible, button:focus-visible {
+    outline: none;
+  }
+}
+
+/* Subtle glass and borders */
+.subtle-border {
+  border: 1px solid rgba(148, 163, 184, 0.15);
 }
 
 /* Custom Scrollbar minimalis */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
@@ -33,3 +43,4 @@
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(148, 163, 184, 0.4);
 }
+
