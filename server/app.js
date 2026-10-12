@@ -100,11 +100,21 @@ app.post('/api/sessions/create', requireAuth, async (req, res) => {
 
     const session = sessionManager.createSession(Number(tableId), Number(durationMinutes), customerName);
     
-    // Construct local player URL
+    // Construct local player URL (Next.js route /play?token=...)
     const host = req.get('host');
     const protocol = req.protocol;
     const playerUrl = `${protocol}://${host}/play?token=${session.token}`;
     const qrDataUrl = await QRCode.toDataURL(playerUrl);
+
+    // Broadcast ke Layar Kedua Kasir (Customer Facing Display)
+    broadcastToCustomerDisplays({
+      type: 'NEW_SESSION_QR',
+      session: {
+        ...session,
+        playerUrl,
+        qrDataUrl
+      }
+    });
 
     res.json({
       status: 'success',
@@ -131,6 +141,13 @@ app.post('/api/sessions/:sessionId/terminate', requireAuth, (req, res) => {
   const { sessionId } = req.params;
   const ok = sessionManager.terminateSession(sessionId);
   if (!ok) return res.status(404).json({ error: 'Session not found' });
+
+  // Notifikasi terminate ke Customer Display
+  broadcastToCustomerDisplays({
+    type: 'SESSION_TERMINATED',
+    sessionId
+  });
+
   res.json({ status: 'success', message: 'Session terminated' });
 });
 
@@ -226,10 +243,18 @@ app.get('/api/player/menu', (req, res) => {
 // ---------------------- WEBSOCKET REALTIME ----------------------
 
 const cashierClients = new Set();
+const customerDisplayClients = new Set();
 
 function broadcastToAllCashiers(data) {
   const payload = JSON.stringify(data);
   for (const client of cashierClients) {
+    if (client.readyState === 1) client.send(payload);
+  }
+}
+
+function broadcastToCustomerDisplays(data) {
+  const payload = JSON.stringify(data);
+  for (const client of customerDisplayClients) {
     if (client.readyState === 1) client.send(payload);
   }
 }
@@ -242,6 +267,12 @@ wss.on('connection', (ws, req) => {
   if (role === 'cashier') {
     cashierClients.add(ws);
     ws.on('close', () => cashierClients.delete(ws));
+    return;
+  }
+
+  if (role === 'customer_display') {
+    customerDisplayClients.add(ws);
+    ws.on('close', () => customerDisplayClients.delete(ws));
     return;
   }
 
